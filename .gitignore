@@ -1,0 +1,5 @@
+book_images/
+output/fetched_covers/
+output/nonscaned/
+output/scanned_books/
+.idea/
