@@ -28,6 +28,6 @@ def get_book_details_openlib(isbn):
 
 
 # Test
-isbn = "2020558564"
+isbn = "9782266222334"
 info = get_book_details_openlib(isbn)
 print(info)
