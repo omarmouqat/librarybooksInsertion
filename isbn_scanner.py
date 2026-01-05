@@ -4,24 +4,14 @@ import csv
 import requests
 from PIL import Image
 from pyzbar.pyzbar import decode
-
-# --- Configuration ---
-SOURCE_FOLDER = 'book_images'
-BACKUP_FOLDER = 'backup'
-
-# Output Folders
-SCANNED_FOLDER = 'output/scanned_books'  # Valid books (ISBN 978/979)
-NON_SCANNED_FOLDER = 'output/nonscaned'  # Everything else (No barcode OR Non-book barcode)
-COVERS_FOLDER = 'output/fetched_covers'
-
-# Output File (CSV)
-CSV_FILE = 'output/library_catalog.csv'
+from conf import *
 
 VALID_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.gif')
 
 
 def setup_directories():
-    for folder in [SCANNED_FOLDER, NON_SCANNED_FOLDER, COVERS_FOLDER]:
+   
+    for folder in [SCANNED_IMAGES_FOLDER,IMAGES_SOURCE_FOLDER, NON_SCANNED_IMAGES_FOLDER, COVERS_FOLDER]:
         if not os.path.exists(folder):
             os.makedirs(folder)
 
@@ -42,7 +32,10 @@ def get_barcode_from_image(image_path):
 def is_book_barcode(code):
     """Checks if the barcode is a Bookland EAN (starts with 978 or 979)."""
     clean_code = code.replace('-', '').replace(' ', '')
-    return clean_code.startswith(('978', '979'))
+    if(clean_code.startswith(('978', '979'))):
+        return clean_code.startswith(('978', '979'))
+    elif clean_code:
+        print("unrecognised code ",clean_code)
 
 
 def fetch_google_books(isbn):
@@ -137,23 +130,22 @@ def main():
     catalog_data = []
 
     # Restore backup images (Safety check to ensure source folder exists)
-    if not os.path.exists(SOURCE_FOLDER):
-        os.makedirs(SOURCE_FOLDER)
+    
 
-    if os.path.exists(BACKUP_FOLDER):
-        print("Restoring images from backup...")
-        for filename in os.listdir(BACKUP_FOLDER):
-            src_path = os.path.join(BACKUP_FOLDER, filename)
-            shutil.copy2(src_path, os.path.join(SOURCE_FOLDER, filename))
-        print("Finished copying images.")
-    else:
-        print(f"Warning: Backup folder '{BACKUP_FOLDER}' not found. Using existing images in source.")
+    # if os.path.exists(BACKUP_FOLDER):
+    #     print("Restoring images from backup...")
+    #     for filename in os.listdir(BACKUP_FOLDER):
+    #         src_path = os.path.join(BACKUP_FOLDER, filename)
+    #         shutil.copy2(src_path, os.path.join(IMAGES_SOURCE_FOLDER, filename))
+    #     print("Finished copying images.")
+    # else:
+    #     print(f"Warning: Backup folder '{BACKUP_FOLDER}' not found. Using existing images in source.")
 
-    print(f"Scanning images in '{SOURCE_FOLDER}'...")
+    print(f"Scanning images in '{IMAGES_SOURCE_FOLDER}'...")
 
-    for filename in os.listdir(SOURCE_FOLDER):
+    for filename in os.listdir(IMAGES_SOURCE_FOLDER):
         if filename.lower().endswith(VALID_EXTENSIONS):
-            src_path = os.path.join(SOURCE_FOLDER, filename)
+            src_path = os.path.join(IMAGES_SOURCE_FOLDER, filename)
 
             # 1. Scan Barcode
             barcode = get_barcode_from_image(src_path)
@@ -174,7 +166,7 @@ def main():
                         cover_file = download_cover_image(book_details['Cover_URL'], barcode)
                         book_details['Local_Cover_File'] = cover_file
                         catalog_data.append(book_details)
-                        print(f"   -> Info Fetched: {book_details['Titre']}")
+                        print(f"  -> Info Fetched: {book_details['Titre']}")
                         is_valid_book = True
                     else:
                         # ISBN is valid format, but no data online.
@@ -192,10 +184,10 @@ def main():
 
             # 3. Move files based on result
             if is_valid_book:
-                shutil.move(src_path, os.path.join(SCANNED_FOLDER, filename))
+                shutil.move(src_path, os.path.join(SCANNED_IMAGES_FOLDER, filename))
             else:
                 # Moves both 'No Barcode' AND 'Non-Book Barcode' images here
-                shutil.move(src_path, os.path.join(NON_SCANNED_FOLDER, filename))
+                shutil.move(src_path, os.path.join(NON_SCANNED_IMAGES_FOLDER, filename))
 
     # Save CSV
     save_to_csv(catalog_data)

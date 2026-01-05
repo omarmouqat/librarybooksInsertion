@@ -3,16 +3,12 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import re
 import pandas as pd
+from conf import *
 # ---------------- Configuration ----------------
-BASE_URL = "http://biblio-test.fsr.ac.ma/pmb"
 LOGIN_URL = f"{BASE_URL}/main.php"
-
-USERNAME = "admin"        
-PASSWORD = "admin"   
 
 CATALOG_CREATE = f"{BASE_URL}/catalog.php?categ=create_form&id=0"
 
-CSV_PATH="output/library_catalog.csv"
 # ------------------------------------------------
 
 def restorAllInputs(page):
@@ -238,7 +234,7 @@ def main():
     if not login_to_pmb(session):
         return
 
-    data = pd.read_csv(CSV_PATH)
+    data = pd.read_csv(CSV_FILE)
     row = data.iloc[8]
 
     
