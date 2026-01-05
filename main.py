@@ -1,16 +1,14 @@
-import subprocess
-import platform
 
-def clear_screen():
-    if platform.system() == "Windows":
-        subprocess.run(["cls"], shell=True)
-    else:
-        subprocess.run(["clear"], shell=True)
+from conf import *
+import time
+from isbn_scanner import scan_images_for_ISBN
 
-
+from general_utils import *
+    
 if __name__ == "__main__":
-    clear_screen()
+    
     while True:
+        clear_screen()
         command = input("""
 1. Scan images for ISBN 
 2. Insert book from ISBN 
@@ -22,7 +20,10 @@ if __name__ == "__main__":
         if command == "0":
             exit()
         elif(command == "1"):
-            print(1)
+            clear_screen()
+            scan_images_for_ISBN()
+            if input("Enter 0 to return to main menu\n") == "0":
+                continue
         elif command == "2":
             print(2)
         elif command == "3":

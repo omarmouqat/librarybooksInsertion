@@ -5,7 +5,7 @@ import requests
 from PIL import Image
 from pyzbar.pyzbar import decode
 from conf import *
-
+from general_utils import *
 VALID_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.gif')
 
 
@@ -125,12 +125,12 @@ def save_to_csv(data_list):
         print(f"Error saving CSV: {e}")
 
 
-def main():
+def scan_images_for_ISBN():
     setup_directories()
+    
     catalog_data = []
 
     # Restore backup images (Safety check to ensure source folder exists)
-    
 
     # if os.path.exists(BACKUP_FOLDER):
     #     print("Restoring images from backup...")
@@ -141,9 +141,12 @@ def main():
     # else:
     #     print(f"Warning: Backup folder '{BACKUP_FOLDER}' not found. Using existing images in source.")
 
-    print(f"Scanning images in '{IMAGES_SOURCE_FOLDER}'...")
-
+    print(f"Scanning images in '{os.getcwd()}/{IMAGES_SOURCE_FOLDER}'...")
+    file_count = 0
     for filename in os.listdir(IMAGES_SOURCE_FOLDER):
+        clear_screen()
+        print(f"{file_count}/{len(os.listdir(IMAGES_SOURCE_FOLDER))}",end="\r",flush=True)
+        
         if filename.lower().endswith(VALID_EXTENSIONS):
             src_path = os.path.join(IMAGES_SOURCE_FOLDER, filename)
 
@@ -151,7 +154,6 @@ def main():
             barcode = get_barcode_from_image(src_path)
 
             # Default assumption: It's not a valid book until proven otherwise
-            is_valid_book = False
             book_details = None
 
             if barcode:
@@ -163,31 +165,27 @@ def main():
 
                     if book_details:
                         # Success: Download Cover
-                        cover_file = download_cover_image(book_details['Cover_URL'], barcode)
-                        book_details['Local_Cover_File'] = cover_file
+                        #cover_file = download_cover_image(book_details['Cover_URL'], barcode)
+                        #book_details['Local_Cover_File'] = cover_file
                         catalog_data.append(book_details)
                         print(f"  -> Info Fetched: {book_details['Titre']}")
                         is_valid_book = True
                     else:
                         # ISBN is valid format, but no data online.
                         # We still treat it as a book (just missing data)
-                        print(f"   -> ISBN valid, but no metadata online.")
+                        print(f"  -> ISBN valid, but no metadata online.")
                         catalog_data.append({
                             "code_barre": barcode,
                             "error": "Metadata not found online"
                         })
-                        is_valid_book = True
+                        shutil.move(src_path, os.path.join(SCANNED_IMAGES_FOLDER, filename))
                 else:
                     print(f"[IGNORED] Non-book barcode: {barcode} in {filename}")
             else:
                 print(f"[SKIP] No barcode found in {filename}")
-
-            # 3. Move files based on result
-            if is_valid_book:
-                shutil.move(src_path, os.path.join(SCANNED_IMAGES_FOLDER, filename))
-            else:
-                # Moves both 'No Barcode' AND 'Non-Book Barcode' images here
                 shutil.move(src_path, os.path.join(NON_SCANNED_IMAGES_FOLDER, filename))
+        
+        file_count+=1
 
     # Save CSV
     save_to_csv(catalog_data)
@@ -197,5 +195,3 @@ def main():
     print(f"CSV Data: {CSV_FILE}")
 
 
-if __name__ == "__main__":
-    main()
